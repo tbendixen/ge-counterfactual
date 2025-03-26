@@ -6,7 +6,7 @@ format:
     code-fold: true
     code-summary: "Show the code"
     toc: true
-code-summary: "Show the code"
+    output-file: "index"
 editor: visual
 ---
 
@@ -307,7 +307,7 @@ ppdbkpi %>%
   theme_classic() +
   labs(title = "Estimated counterfactual and effectiveness adjustment factor",
        subtitle = "Weighted to donation database sample",
-       x = "Counterfactual and effectiveness adjustment factor",
+       x = "Counterfactual and effectiveness adjustment factor (%)",
        y = "Density")
 ```
 
@@ -319,7 +319,8 @@ db_est <- ppdbkpi %>%
   median_hdci(y)
 ```
 
-*The final result is `r round(db_est$y,1)`%* [`r round(db_est$.lower,1)`;`r round(db_est$.upper,1)`], which is similar albeit a little lower than the matched survey sample estimate of `r round(sample_est,1)`%.
+### Result
+**The final result is `r round(db_est$y,1)`%** [`r round(db_est$.lower,1)`% ; `r round(db_est$.upper,1)`%], which is similar albeit a little lower than the matched survey sample estimate of `r round(sample_est,1)`%.
 
 The following sections include a few model checks.
 
@@ -349,9 +350,9 @@ ppsurveykpi %>%
   ggplot() +
   stat_halfeye(aes(x = y), point_interval = "median_hdci") + 
   theme_classic() +
-  labs(title = "Posterior counterfactual and effectiveness adjustment factor",
+  labs(title = "Estimated counterfactual and effectiveness adjustment factor",
        subtitle = "Calculated in survey sample",
-       x = "Counterfactual and effectiveness adjustment factor",
+       x = "Counterfactual and effectiveness adjustment factor (%)",
        y = "Density")
 ```
 
@@ -481,4 +482,4 @@ results2 <- survey_adjust %>%
 donor_est <- with(results2, sum(adjusted_donors, total_donors[adjustment == 1])/sum(total_donors)) * 100
 ```
 
-The result is `r donor_est`% which is not identical to the number reported in the current version of the giving multiplier tool because we include newer survey data here.
+The result is `r round(donor_est,1)`% which is very close but not identical to the number reported in the current version of the giving multiplier tool because we include newer survey data here.
