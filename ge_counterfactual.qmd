@@ -4,7 +4,7 @@ author: Theiss Bendixen
 format:
   html:
     code-fold: true
-    code-summary: "Show the code"
+    code-summary: "Show code"
     toc: true
     output-file: "index"
 editor: visual
@@ -23,20 +23,18 @@ knitr::opts_chunk$set(
 ```
 
 # Introduction 
-This script aims at computing a combined counterfactual and effectiveness adjustment factor for donations to Giv Effektivt.
+This semi-technical write-up aims at computing a combined counterfactual and effectiveness adjustment factor for donations to [Giv Effektivt](https://giveffektivt.dk/).
 
 This factor informs a "counterfactual giving multiplier" estimate for the overall counterfactual impact of Giv Effektivt,
 see more [here](https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193).
 
 Essentially we ask: **Of our total donations, how big a percentage did we influence, either by encouraging donors to donate or to donate more effectively?**
 
-The basic strategy is to use post-donation survey responses to the question: "How would you have spent the donated amount if not on Giv Effektivt?" and couple each response to a donation in our donation database based on time stamps.
+The basic strategy is to use post-donation survey responses to the question: *How would you have spent the donated amount if not on Giv Effektivt?* and couple each response to a donation in our donation database based on time stamps.
 
-Next, we assign (subjective!) weights (justified in the Google Sheets link above) to each of these responses that 
-reflect their counterfactual/effectiveness-adjusted value and use those weights to re-calculate the percentage of 
-donated funds that wouldn't have been donated in the absence of Giv Effektivt or would've been donated less effectively. 
+Next, we assign (subjective!) weights (justified in the Google Sheets link [above](https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193)) to each of these responses that reflect their counterfactual/effectiveness-adjusted value and use those weights to re-calculate the percentage of donated funds that wouldn't have been donated in the absence of Giv Effektivt or would've been donated less effectively. 
 
-Finally, we (exploratorily) attempt to mitigate post-donation survey selection bias by re-weighing results to our full donation database sample, using a multilevel model with poststratification (MrP)-based approach. Modelling the data is necessary, since there are demographic combinations in the donation database that we do not observe in the survey sample, hence we need a model to try and predict for those groups.
+Finally, we attempt to mitigate post-donation survey selection bias by re-weighing results to our full donation database sample, using a multilevel model with poststratification (MrP)-based approach. Modelling the data is necessary, since there are demographic combinations in the donation database that we do not observe in the survey sample, hence we need a model to try and predict for those groups.
  
 The program has 7 main parts:
 
@@ -191,7 +189,7 @@ results <- fin %>%
 sample_est <- with(results, sum(adjusted_total, total_donated[adjustment == 1])/sum(total_donated)) * 100
 ```
 
-We arrive at an estimate of `r round(sample_est,1)`%. That is, based on the survey data and subjective weights, we estimate that `r round(sample_est,1)`% of the funds we raise and regrant are uniquely attributable to Giv Effektivt. Not too shabby!
+**We arrive at an estimate of `r round(sample_est,1)`%**. That is, based on the survey data and subjective weights, we estimate that `r round(sample_est,1)`% of the funds we raise and regrant are uniquely attributable to Giv Effektivt. Not too shabby!
 
 ## Counterfactual and effectiveness adjustment factor in *database* sample
 The estimate in the previous step assumes that our survey sample is representative of our wider donor base. This is potentially a strong assumption, so we want to try as best as we can to correct for observed discrepancies -- in particular, age and sex which are the available variables -- between our survey sample and our wider donor base. We proceed in the following manner:
@@ -293,9 +291,7 @@ ppdbkpi <- add_epred_draws(object = mod,
   summarise(total_donated = sum(estimate)) %>%
   # Apply subjective adjustment factors
   mutate(adjusted_total = (total_donated*(as.numeric(adjustment)-1)/as.numeric(adjustment)))
-```
 
-```{r}
 ### Plot posterior poststratified counterfactual and effectiveness adjustment factor
 ppdbkpi %>%
   group_by(.draw) %>%
@@ -427,13 +423,18 @@ ggplot(ppsurveykpi,
                      position = position_dodge(width = dodge_width), 
                      linewidth = 0.2, alpha = .8) + 
   facet_wrap(~gender, nrow = 2) +
-  scale_color_manual(values = c("grey10", "grey50", "grey80")) +
+  scale_color_manual(values = c("grey10", "grey50", "grey80"),
+                     labels = c("Counterfactual non-donor",
+                                "GiveWell top charity-level donor",
+                                "Conventional charity donor")) +
   geom_point(data = obssurveykpi,
              aes(x = age_group, y = median_donation, color = adjustment, group = adjustment), 
              position = position_dodge(width = dodge_width),
              color = "red") +
   geom_hline(data = hline, aes(yintercept = y), linetype = "dashed", alpha = 0.3) + 
-  theme_classic() + 
+  theme_classic() +
+  theme(legend.position = "bottom",
+        legend.title = element_blank()) +
   labs(title = "Model check plot",
        subtitle = "Red points: Observed median donations\nGrey points and intervals: Predicted median donations",
        y = "Median donation",
@@ -445,7 +446,7 @@ Eye-balling results, shrinkage is quite heavy across the board, making demograph
 
 ## Counterfactual and effectiveness adjustment factor based on number of donors
 
-This final section is a coded up calculation of the counterfactual and effectiveness adjustment factor currently used in the giving multiplier tool ([here](https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193)), which is based on the number of *donors* instead of donation amounts.
+This final section is a coded up calculation of the counterfactual and effectiveness adjustment factor currently used in the giving multiplier tool ([here](https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193)), which is based on the *number of donors* instead of donation amounts.
 ```{r}
 ### Define counterfactual/effectiveness adjustment (as in Step 3 above)
 survey_adjust <- survey %>%

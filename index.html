@@ -126,12 +126,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>This script aims at computing a combined counterfactual and effectiveness adjustment factor for donations to Giv Effektivt.</p>
+<p>This semi-technical write-up aims at computing a combined counterfactual and effectiveness adjustment factor for donations to <a href="https://giveffektivt.dk/">Giv Effektivt</a>.</p>
 <p>This factor informs a “counterfactual giving multiplier” estimate for the overall counterfactual impact of Giv Effektivt, see more <a href="https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193">here</a>.</p>
 <p>Essentially we ask: <strong>Of our total donations, how big a percentage did we influence, either by encouraging donors to donate or to donate more effectively?</strong></p>
-<p>The basic strategy is to use post-donation survey responses to the question: “How would you have spent the donated amount if not on Giv Effektivt?” and couple each response to a donation in our donation database based on time stamps.</p>
-<p>Next, we assign (subjective!) weights (justified in the Google Sheets link above) to each of these responses that reflect their counterfactual/effectiveness-adjusted value and use those weights to re-calculate the percentage of donated funds that wouldn’t have been donated in the absence of Giv Effektivt or would’ve been donated less effectively.</p>
-<p>Finally, we (exploratorily) attempt to mitigate post-donation survey selection bias by re-weighing results to our full donation database sample, using a multilevel model with poststratification (MrP)-based approach. Modelling the data is necessary, since there are demographic combinations in the donation database that we do not observe in the survey sample, hence we need a model to try and predict for those groups.</p>
+<p>The basic strategy is to use post-donation survey responses to the question: <em>How would you have spent the donated amount if not on Giv Effektivt?</em> and couple each response to a donation in our donation database based on time stamps.</p>
+<p>Next, we assign (subjective!) weights (justified in the Google Sheets link <a href="https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193">above</a>) to each of these responses that reflect their counterfactual/effectiveness-adjusted value and use those weights to re-calculate the percentage of donated funds that wouldn’t have been donated in the absence of Giv Effektivt or would’ve been donated less effectively.</p>
+<p>Finally, we attempt to mitigate post-donation survey selection bias by re-weighing results to our full donation database sample, using a multilevel model with poststratification (MrP)-based approach. Modelling the data is necessary, since there are demographic combinations in the donation database that we do not observe in the survey sample, hence we need a model to try and predict for those groups.</p>
 <p>The program has 7 main parts:</p>
 <ol type="1">
 <li><p>First, load packages and data</p></li>
@@ -146,7 +146,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="load-packages-and-data">Load packages and data</h2>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Show code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">###############################</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="do">## 1) Load packages and data ##</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="do">###############################</span></span>
@@ -176,7 +176,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The basic approach here is that we try to find matches between survey responders and donations in our donation database within some time range. This time range is fairly arbitrary but a reasonable first pass could be to look for survey responses that happen anywhere from, say, 30 seconds to 900 seconds after a donation.</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Show code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Function to find matching surveys for each donation</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>find_matching_surveys <span class="ot">&lt;-</span> <span class="cf">function</span>(donations, survey, <span class="at">min_seconds =</span> <span class="dv">30</span>, <span class="at">max_seconds =</span> <span class="dv">900</span>) {</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  </span>
@@ -242,7 +242,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>In this step, we assign (subjective!) weights (justified in the same Google Sheets link as <a href="https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193">above</a>) to each of the survey responses that reflect their combined counterfactual and effectiveness-adjusted value and use those weights to re-calculate the percentage of donated funds that wouldn’t have been donated in the absence of Giv Effektivt or would’ve been donated less effectively.</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Show code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="do">######################################################################################</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="do">## 3) Calculate counterfactual and effectiveness adjustment factor in survey sample ##</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="do">######################################################################################</span></span>
@@ -282,7 +282,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>sample_est <span class="ot">&lt;-</span> <span class="fu">with</span>(results, <span class="fu">sum</span>(adjusted_total, total_donated[adjustment <span class="sc">==</span> <span class="dv">1</span>])<span class="sc">/</span><span class="fu">sum</span>(total_donated)) <span class="sc">*</span> <span class="dv">100</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>We arrive at an estimate of 75.5%. That is, based on the survey data and subjective weights, we estimate that 75.5% of the funds we raise and regrant are uniquely attributable to Giv Effektivt. Not too shabby!</p>
+<p><strong>We arrive at an estimate of 75.5%</strong>. That is, based on the survey data and subjective weights, we estimate that 75.5% of the funds we raise and regrant are uniquely attributable to Giv Effektivt. Not too shabby!</p>
 </section>
 <section id="counterfactual-and-effectiveness-adjustment-factor-in-database-sample" class="level2">
 <h2 class="anchored" data-anchor-id="counterfactual-and-effectiveness-adjustment-factor-in-database-sample">Counterfactual and effectiveness adjustment factor in <em>database</em> sample</h2>
@@ -296,7 +296,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="fit-a-model">Fit a model</h3>
 <div class="cell" data-hash="ge_counterfactual_cache/html/unnamed-chunk-4_30713648049f469d063dc2bd50c7b241">
 <details>
-<summary>Show the code</summary>
+<summary>Show code</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Next up, multilevel regression with poststratification (MrP):</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="do">### 1) fit a multilevel model on donated amount predicted by (binned) age, sex and response category with time-matched sample</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="do">### 2) get database proportions of age and sex</span></span>
@@ -335,7 +335,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="obtain-proportions-of-age-and-sex-in-donor-database">Obtain proportions of age and sex in donor database</h3>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Show code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Get database demographic proportions</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>dbdemo <span class="ot">&lt;-</span> donations <span class="sc">%&gt;%</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># NB: Only unique person IDs to not count the same people more than once</span></span>
@@ -358,7 +358,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>We can check how our matched survey sample compare demographically with our donor database. The overlap is not too bad, except perhaps the survey has an overrepresentation of younger men compared to the donor database.</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Show code</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Plot </span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rbind</span>(dbdemo <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">sample =</span> <span class="st">"donation db"</span>),</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>      d_demo <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">sample =</span> <span class="st">"survey sample"</span>)) <span class="sc">%&gt;%</span></span>
@@ -381,7 +381,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Finally, we reweigh our model predicted donation amounts with the weights obtained from the demographic composition of the donor database. Let’s plot the result as a density to express the our uncertainty.</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Show code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Posterior predictions with proportions as weights on database sample</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>ppdbkpi <span class="ot">&lt;-</span> <span class="fu">add_epred_draws</span>(<span class="at">object =</span> mod,</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                           <span class="at">newdata =</span> tidyr<span class="sc">::</span><span class="fu">crossing</span>(dbdemo, <span class="at">adjustment =</span> <span class="fu">unique</span>(d<span class="sc">$</span>adjustment)),</span>
@@ -393,38 +393,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(adjustment, .draw) <span class="sc">%&gt;%</span></span>
 <span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total_donated =</span> <span class="fu">sum</span>(estimate)) <span class="sc">%&gt;%</span></span>
 <span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Apply subjective adjustment factors</span></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">adjusted_total =</span> (total_donated<span class="sc">*</span>(<span class="fu">as.numeric</span>(adjustment)<span class="sc">-</span><span class="dv">1</span>)<span class="sc">/</span><span class="fu">as.numeric</span>(adjustment)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-</div>
-<div class="cell">
-<details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Plot posterior poststratified counterfactual and effectiveness adjustment factor</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>ppdbkpi <span class="sc">%&gt;%</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.draw) <span class="sc">%&gt;%</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add the counterfactual non-donors (Adjustment == 1) and calculate percentage</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">y =</span> <span class="fu">sum</span>(adjusted_total, total_donated[adjustment <span class="sc">==</span> <span class="dv">1</span>])<span class="sc">/</span><span class="fu">sum</span>(total_donated) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Plot!</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>(<span class="fu">aes</span>(<span class="at">x =</span> y), <span class="at">point_interval =</span> <span class="st">"median_hdci"</span>) <span class="sc">+</span> </span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Estimated counterfactual and effectiveness adjustment factor"</span>,</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Weighted to donation database sample"</span>,</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Counterfactual and effectiveness adjustment factor (%)"</span>,</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Density"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">adjusted_total =</span> (total_donated<span class="sc">*</span>(<span class="fu">as.numeric</span>(adjustment)<span class="sc">-</span><span class="dv">1</span>)<span class="sc">/</span><span class="fu">as.numeric</span>(adjustment)))</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="do">### Plot posterior poststratified counterfactual and effectiveness adjustment factor</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>ppdbkpi <span class="sc">%&gt;%</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.draw) <span class="sc">%&gt;%</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add the counterfactual non-donors (Adjustment == 1) and calculate percentage</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">y =</span> <span class="fu">sum</span>(adjusted_total, total_donated[adjustment <span class="sc">==</span> <span class="dv">1</span>])<span class="sc">/</span><span class="fu">sum</span>(total_donated) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Plot!</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>(<span class="fu">aes</span>(<span class="at">x =</span> y), <span class="at">point_interval =</span> <span class="st">"median_hdci"</span>) <span class="sc">+</span> </span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Estimated counterfactual and effectiveness adjustment factor"</span>,</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Weighted to donation database sample"</span>,</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Counterfactual and effectiveness adjustment factor (%)"</span>,</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Density"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<p><img src="ge_counterfactual_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+<p><img src="ge_counterfactual_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Posterior median poststratified counterfactual and effectiveness adjustment factor</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>db_est <span class="ot">&lt;-</span> ppdbkpi <span class="sc">%&gt;%</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.draw) <span class="sc">%&gt;%</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">y =</span> <span class="fu">sum</span>(adjusted_total, total_donated[adjustment <span class="sc">==</span> <span class="dv">1</span>])<span class="sc">/</span><span class="fu">sum</span>(total_donated) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">median_hdci</span>(y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Posterior median poststratified counterfactual and effectiveness adjustment factor</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>db_est <span class="ot">&lt;-</span> ppdbkpi <span class="sc">%&gt;%</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.draw) <span class="sc">%&gt;%</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">y =</span> <span class="fu">sum</span>(adjusted_total, total_donated[adjustment <span class="sc">==</span> <span class="dv">1</span>])<span class="sc">/</span><span class="fu">sum</span>(total_donated) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">median_hdci</span>(y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 </section>
@@ -439,48 +435,48 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Here, we check what happens if we ignore the demographic weights to see if our model predictions fit reasonably with our empirical (i.e., not model-based) estimate in the matched survey sample.</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Posterior predictions on survey sample</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>ppsurveykpi <span class="ot">&lt;-</span> <span class="fu">add_epred_draws</span>(<span class="at">object =</span> mod,</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                               <span class="at">newdata =</span> <span class="fu">distinct</span>(mod<span class="sc">$</span>data[<span class="fu">c</span>(<span class="st">"gender"</span>, <span class="st">"age_group"</span>, <span class="st">"adjustment"</span>)])) <span class="sc">%&gt;%</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Exponentiate predictions *but no re-weighing*</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">estimate =</span> <span class="fu">exp</span>(.epred)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Sum predictions for each adjustment level</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(adjustment, .draw) <span class="sc">%&gt;%</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total_donated =</span> <span class="fu">sum</span>(estimate)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Apply subjective adjustment factors</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">adjusted_total =</span> (total_donated<span class="sc">*</span>(<span class="fu">as.numeric</span>(adjustment)<span class="sc">-</span><span class="dv">1</span>)<span class="sc">/</span><span class="fu">as.numeric</span>(adjustment)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Posterior predictions on survey sample</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>ppsurveykpi <span class="ot">&lt;-</span> <span class="fu">add_epred_draws</span>(<span class="at">object =</span> mod,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                               <span class="at">newdata =</span> <span class="fu">distinct</span>(mod<span class="sc">$</span>data[<span class="fu">c</span>(<span class="st">"gender"</span>, <span class="st">"age_group"</span>, <span class="st">"adjustment"</span>)])) <span class="sc">%&gt;%</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Exponentiate predictions *but no re-weighing*</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">estimate =</span> <span class="fu">exp</span>(.epred)) <span class="sc">%&gt;%</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Sum predictions for each adjustment level</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(adjustment, .draw) <span class="sc">%&gt;%</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total_donated =</span> <span class="fu">sum</span>(estimate)) <span class="sc">%&gt;%</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Apply subjective adjustment factors</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">adjusted_total =</span> (total_donated<span class="sc">*</span>(<span class="fu">as.numeric</span>(adjustment)<span class="sc">-</span><span class="dv">1</span>)<span class="sc">/</span><span class="fu">as.numeric</span>(adjustment)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Plot posterior in-sample counterfactual and effectiveness adjustment factor</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>ppsurveykpi <span class="sc">%&gt;%</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.draw) <span class="sc">%&gt;%</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add the counterfactual non-donors (Adjustment == 1) and calculate percentage</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">y =</span> <span class="fu">sum</span>(adjusted_total, total_donated[adjustment <span class="sc">==</span> <span class="dv">1</span>])<span class="sc">/</span><span class="fu">sum</span>(total_donated) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Plot!</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>(<span class="fu">aes</span>(<span class="at">x =</span> y), <span class="at">point_interval =</span> <span class="st">"median_hdci"</span>) <span class="sc">+</span> </span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Estimated counterfactual and effectiveness adjustment factor"</span>,</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Calculated in survey sample"</span>,</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Counterfactual and effectiveness adjustment factor (%)"</span>,</span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Density"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Plot posterior in-sample counterfactual and effectiveness adjustment factor</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>ppsurveykpi <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.draw) <span class="sc">%&gt;%</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add the counterfactual non-donors (Adjustment == 1) and calculate percentage</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">y =</span> <span class="fu">sum</span>(adjusted_total, total_donated[adjustment <span class="sc">==</span> <span class="dv">1</span>])<span class="sc">/</span><span class="fu">sum</span>(total_donated) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Plot!</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>(<span class="fu">aes</span>(<span class="at">x =</span> y), <span class="at">point_interval =</span> <span class="st">"median_hdci"</span>) <span class="sc">+</span> </span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Estimated counterfactual and effectiveness adjustment factor"</span>,</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Calculated in survey sample"</span>,</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Counterfactual and effectiveness adjustment factor (%)"</span>,</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Density"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<p><img src="ge_counterfactual_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+<p><img src="ge_counterfactual_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Posterior median in-sample counterfactual and effectiveness adjustment factor</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>samplemod_est <span class="ot">&lt;-</span> ppsurveykpi <span class="sc">%&gt;%</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.draw) <span class="sc">%&gt;%</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">y =</span> <span class="fu">sum</span>(adjusted_total, total_donated[adjustment <span class="sc">==</span> <span class="dv">1</span>])<span class="sc">/</span><span class="fu">sum</span>(total_donated) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">median_hdci</span>(y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Posterior median in-sample counterfactual and effectiveness adjustment factor</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>samplemod_est <span class="ot">&lt;-</span> ppsurveykpi <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.draw) <span class="sc">%&gt;%</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">y =</span> <span class="fu">sum</span>(adjusted_total, total_donated[adjustment <span class="sc">==</span> <span class="dv">1</span>])<span class="sc">/</span><span class="fu">sum</span>(total_donated) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">median_hdci</span>(y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>The result is 73.4%. Since we leave out the demographic weights and hence retain the demopgraphic composition of the matched survey sample, this result should line up fairly closely to the sample estimate of 75.5% from above, which it does.</p>
@@ -492,116 +488,121 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>How to read this plot? Ideally, the model is able to retrodict fairly accurately the observed donations, although with more shrinkage (and uncertainty) for sparsely populated or unobserved demographic combinations.</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Posterior predictions without weights for all combinations of gender, age_groups and adjustment ("posterior predictive check")</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>ppsurveykpi <span class="ot">&lt;-</span> <span class="fu">add_epred_draws</span>(<span class="at">object =</span> mod,</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>                               <span class="at">newdata =</span> tidyr<span class="sc">::</span><span class="fu">crossing</span>(d_demo, <span class="at">adjustment =</span> <span class="fu">unique</span>(d<span class="sc">$</span>adjustment))) <span class="sc">%&gt;%</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">.epred =</span> <span class="fu">exp</span>(.epred)) <span class="sc">%&gt;%</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(adjustment, age_group, gender) <span class="sc">%&gt;%</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">median_qi</span>(.epred)) <span class="sc">%&gt;%</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">median_donation =</span> y,</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">.lower =</span> ymin,</span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">.upper =</span> ymax)</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="do">### Median donation amounts for all *observed* combinations of gender, age_groups and adjustment </span></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>obssurveykpi <span class="ot">&lt;-</span> mod<span class="sc">$</span>data <span class="sc">%&gt;%</span></span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">kpi_value =</span> <span class="fu">exp</span>(log_kpivalue)) <span class="sc">%&gt;%</span></span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(adjustment, age_group, gender) <span class="sc">%&gt;%</span></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">median_donation =</span> <span class="fu">median</span>(kpi_value))</span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="do">### In order for the geom_points to overlap in the below plot, non-observed combinations of</span></span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="do">### gender, age_group and adjustment need to be filled in (and set to NA -- will throw an ignorable warning in ggplot)</span></span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>obssurveykpi <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(</span>
-<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">age_group =</span> <span class="fu">unique</span>(ppsurveykpi<span class="sc">$</span>age_group),</span>
-<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">adjustment =</span> <span class="fu">unique</span>(ppsurveykpi<span class="sc">$</span>adjustment),</span>
-<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">gender =</span> <span class="fu">unique</span>(ppsurveykpi<span class="sc">$</span>gender)</span>
-<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
-<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">merge</span>(obssurveykpi,</span>
-<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>        <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"age_group"</span>, <span class="st">"adjustment"</span>, <span class="st">"gender"</span>),</span>
-<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>        <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="do">### Marginal predictions for each gender to better visualize shrinkage</span></span>
-<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>hline <span class="ot">&lt;-</span> <span class="fu">add_epred_draws</span>(<span class="at">object =</span> mod,</span>
-<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>                         <span class="at">newdata =</span> tidyr<span class="sc">::</span><span class="fu">crossing</span>(d <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">!</span>gender), </span>
-<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>                                                   <span class="at">gender =</span> <span class="fu">unique</span>(mod<span class="sc">$</span>data<span class="sc">$</span>gender))) <span class="sc">%&gt;%</span></span>
-<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">.epred =</span> <span class="fu">exp</span>(.epred)) <span class="sc">%&gt;%</span></span>
-<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(gender) <span class="sc">%&gt;%</span></span>
-<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">y =</span> <span class="fu">median</span>(.epred))</span>
-<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a><span class="do">### Model check plot</span></span>
-<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a><span class="do">### Red: Observed median donations</span></span>
-<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a><span class="do">### Grey points and intervals: Predicted median donations</span></span>
-<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a><span class="do">### Dashed line: Marginal median donations for each gender</span></span>
-<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a><span class="do">### Ideally, the model is able to retrodict fairly accurately the observed donations, </span></span>
-<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a><span class="do">### although with more shrinkage (and uncertainty) for sparsely populated or unobserved demographic combinations</span></span>
-<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>dodge_width <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
-<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(ppsurveykpi, </span>
-<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> age_group, <span class="at">y =</span> median_donation)) <span class="sc">+</span></span>
-<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_pointinterval</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> .lower, <span class="at">ymax =</span> .upper, <span class="at">color =</span> adjustment, <span class="at">group =</span> adjustment), </span>
-<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a>                     <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> dodge_width), </span>
-<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a>                     <span class="at">linewidth =</span> <span class="fl">0.2</span>, <span class="at">alpha =</span> .<span class="dv">8</span>) <span class="sc">+</span> </span>
-<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>gender, <span class="at">nrow =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
-<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"grey10"</span>, <span class="st">"grey50"</span>, <span class="st">"grey80"</span>)) <span class="sc">+</span></span>
-<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> obssurveykpi,</span>
-<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>             <span class="fu">aes</span>(<span class="at">x =</span> age_group, <span class="at">y =</span> median_donation, <span class="at">color =</span> adjustment, <span class="at">group =</span> adjustment), </span>
-<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>             <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> dodge_width),</span>
-<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>             <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
-<span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">data =</span> hline, <span class="fu">aes</span>(<span class="at">yintercept =</span> y), <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span> </span>
-<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span> </span>
-<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Model check plot"</span>,</span>
-<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Red points: Observed median donations</span><span class="sc">\n</span><span class="st">Grey points and intervals: Predicted median donations"</span>,</span>
-<span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Median donation"</span>,</span>
-<span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Age group"</span>) <span class="sc">+</span> </span>
-<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Posterior predictions without weights for all combinations of gender, age_groups and adjustment ("posterior predictive check")</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>ppsurveykpi <span class="ot">&lt;-</span> <span class="fu">add_epred_draws</span>(<span class="at">object =</span> mod,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                               <span class="at">newdata =</span> tidyr<span class="sc">::</span><span class="fu">crossing</span>(d_demo, <span class="at">adjustment =</span> <span class="fu">unique</span>(d<span class="sc">$</span>adjustment))) <span class="sc">%&gt;%</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">.epred =</span> <span class="fu">exp</span>(.epred)) <span class="sc">%&gt;%</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(adjustment, age_group, gender) <span class="sc">%&gt;%</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">median_qi</span>(.epred)) <span class="sc">%&gt;%</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">median_donation =</span> y,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">.lower =</span> ymin,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">.upper =</span> ymax)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="do">### Median donation amounts for all *observed* combinations of gender, age_groups and adjustment </span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>obssurveykpi <span class="ot">&lt;-</span> mod<span class="sc">$</span>data <span class="sc">%&gt;%</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">kpi_value =</span> <span class="fu">exp</span>(log_kpivalue)) <span class="sc">%&gt;%</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(adjustment, age_group, gender) <span class="sc">%&gt;%</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">median_donation =</span> <span class="fu">median</span>(kpi_value))</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="do">### In order for the geom_points to overlap in the below plot, non-observed combinations of</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="do">### gender, age_group and adjustment need to be filled in (and set to NA -- will throw an ignorable warning in ggplot)</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>obssurveykpi <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">age_group =</span> <span class="fu">unique</span>(ppsurveykpi<span class="sc">$</span>age_group),</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">adjustment =</span> <span class="fu">unique</span>(ppsurveykpi<span class="sc">$</span>adjustment),</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">gender =</span> <span class="fu">unique</span>(ppsurveykpi<span class="sc">$</span>gender)</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">merge</span>(obssurveykpi,</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>        <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"age_group"</span>, <span class="st">"adjustment"</span>, <span class="st">"gender"</span>),</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>        <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a><span class="do">### Marginal predictions for each gender to better visualize shrinkage</span></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>hline <span class="ot">&lt;-</span> <span class="fu">add_epred_draws</span>(<span class="at">object =</span> mod,</span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>                         <span class="at">newdata =</span> tidyr<span class="sc">::</span><span class="fu">crossing</span>(d <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">!</span>gender), </span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>                                                   <span class="at">gender =</span> <span class="fu">unique</span>(mod<span class="sc">$</span>data<span class="sc">$</span>gender))) <span class="sc">%&gt;%</span></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">.epred =</span> <span class="fu">exp</span>(.epred)) <span class="sc">%&gt;%</span></span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(gender) <span class="sc">%&gt;%</span></span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">y =</span> <span class="fu">median</span>(.epred))</span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a><span class="do">### Model check plot</span></span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a><span class="do">### Red: Observed median donations</span></span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a><span class="do">### Grey points and intervals: Predicted median donations</span></span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a><span class="do">### Dashed line: Marginal median donations for each gender</span></span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a><span class="do">### Ideally, the model is able to retrodict fairly accurately the observed donations, </span></span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a><span class="do">### although with more shrinkage (and uncertainty) for sparsely populated or unobserved demographic combinations</span></span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>dodge_width <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(ppsurveykpi, </span>
+<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> age_group, <span class="at">y =</span> median_donation)) <span class="sc">+</span></span>
+<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_pointinterval</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> .lower, <span class="at">ymax =</span> .upper, <span class="at">color =</span> adjustment, <span class="at">group =</span> adjustment), </span>
+<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>                     <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> dodge_width), </span>
+<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a>                     <span class="at">linewidth =</span> <span class="fl">0.2</span>, <span class="at">alpha =</span> .<span class="dv">8</span>) <span class="sc">+</span> </span>
+<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>gender, <span class="at">nrow =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"grey10"</span>, <span class="st">"grey50"</span>, <span class="st">"grey80"</span>),</span>
+<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a>                     <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Counterfactual non-donor"</span>,</span>
+<span id="cb12-54"><a href="#cb12-54" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"GiveWell top charity-level donor"</span>,</span>
+<span id="cb12-55"><a href="#cb12-55" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"Conventional charity donor"</span>)) <span class="sc">+</span></span>
+<span id="cb12-56"><a href="#cb12-56" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> obssurveykpi,</span>
+<span id="cb12-57"><a href="#cb12-57" aria-hidden="true" tabindex="-1"></a>             <span class="fu">aes</span>(<span class="at">x =</span> age_group, <span class="at">y =</span> median_donation, <span class="at">color =</span> adjustment, <span class="at">group =</span> adjustment), </span>
+<span id="cb12-58"><a href="#cb12-58" aria-hidden="true" tabindex="-1"></a>             <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> dodge_width),</span>
+<span id="cb12-59"><a href="#cb12-59" aria-hidden="true" tabindex="-1"></a>             <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb12-60"><a href="#cb12-60" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">data =</span> hline, <span class="fu">aes</span>(<span class="at">yintercept =</span> y), <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span> </span>
+<span id="cb12-61"><a href="#cb12-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb12-62"><a href="#cb12-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>,</span>
+<span id="cb12-63"><a href="#cb12-63" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.title =</span> <span class="fu">element_blank</span>()) <span class="sc">+</span></span>
+<span id="cb12-64"><a href="#cb12-64" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Model check plot"</span>,</span>
+<span id="cb12-65"><a href="#cb12-65" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Red points: Observed median donations</span><span class="sc">\n</span><span class="st">Grey points and intervals: Predicted median donations"</span>,</span>
+<span id="cb12-66"><a href="#cb12-66" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Median donation"</span>,</span>
+<span id="cb12-67"><a href="#cb12-67" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Age group"</span>) <span class="sc">+</span> </span>
+<span id="cb12-68"><a href="#cb12-68" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<p><img src="ge_counterfactual_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
+<p><img src="ge_counterfactual_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>Eye-balling results, shrinkage is quite heavy across the board, making demographic groups more similar, but otherwise there appears to be reasonable overlap with observed median donation amounts.</p>
 </section>
 <section id="counterfactual-and-effectiveness-adjustment-factor-based-on-number-of-donors" class="level2">
 <h2 class="anchored" data-anchor-id="counterfactual-and-effectiveness-adjustment-factor-based-on-number-of-donors">Counterfactual and effectiveness adjustment factor based on number of donors</h2>
-<p>This final section is a coded up calculation of the counterfactual and effectiveness adjustment factor currently used in the giving multiplier tool (<a href="https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193">here</a>), which is based on the number of <em>donors</em> instead of donation amounts.</p>
+<p>This final section is a coded up calculation of the counterfactual and effectiveness adjustment factor currently used in the giving multiplier tool (<a href="https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193">here</a>), which is based on the <em>number of donors</em> instead of donation amounts.</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Define counterfactual/effectiveness adjustment (as in Step 3 above)</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>survey_adjust <span class="ot">&lt;-</span> survey <span class="sc">%&gt;%</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">adjustment =</span> <span class="fu">case_when</span>(</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Non-GiveWell charities</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    response <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"En almindeligt kendt velgørenhedsorganisation"</span>,</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"En klimaorganisation med fradrag (Verdens skove, Naturfonden eller noget tredje). Evt egne investeringer i klimatiltag. "</span>,</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Andre velgørende områder som fx dyrevelfærd, klima, osv."</span>,</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Dansk vegetarisk forening. Mangler en god vegansk og fradrags berettiget organisation. "</span>,</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Oxfam"</span>,<span class="st">"Læger uden grænser "</span>, <span class="st">"PULS projekt ulandshjælp til selvhjælp"</span>, <span class="st">"røde kors"</span>,</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Andre velgørende formål som fx dyrevelfærd, klima, osv."</span>,<span class="st">"Jeg havde brugt færre penge på velgørenhed fordi jeg ikke forstod de etiske perspektiver som GivEffektivt forklarede mig da de medvirkede i Supertanker"</span>,</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Mit hjerte banker for de uskyldige dyr, så de fleste donationer jeg har givet, har været til dyr. Jeg ville elske at mine penge til dyrene kunne blive brugt bedst muligt"</span>) <span class="sc">~</span> <span class="dv">10</span>,</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Counterfactual non-donors</span></span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    response <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Eget forbrug eller opsparing"</span>,</span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Fysisk gave"</span>,<span class="st">"Købt et hus ;)"</span>,</span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"En eller anden ligegyldig gave"</span>,</span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Dd"</span>) <span class="sc">~</span> <span class="dv">1</span>,</span>
-<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># GiveWell or similar</span></span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>    response <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"En af de organisationer vi pt. anbefaler (uden fradrag): Against Malaria Foundation, New Incentives, Helen Keller International, GiveWell, Malaria Consortium"</span>,</span>
-<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"GiveWell eller Giving What We Can (uden fradrag)"</span>, <span class="st">"Blandede donationer til Against Malaria Foundation, MSF, kræftens bekæmpelse og lign."</span>,</span>
-<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Nok Against Malaria Foundation Germany 1 da de er på GiveWell listen og giver skattefradrag, så jeg kan give mere."</span>) <span class="sc">~</span> <span class="fl">1.1</span>))</span>
-<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="do">### There should be no NAs (all type of responses should be accounted for)</span></span>
-<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a><span class="co"># sum(is.na(survey_adjust$adjustment))</span></span>
-<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a><span class="do">### Calculate total donors and also calculate adjusted number of donors, applying the counterfactual/effectiveness adjustment</span></span>
-<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>results2 <span class="ot">&lt;-</span> survey_adjust <span class="sc">%&gt;%</span></span>
-<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(adjustment) <span class="sc">%&gt;%</span></span>
-<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total_donors =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
-<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">adjusted_donors =</span> (total_donors<span class="sc">*</span>(adjustment<span class="dv">-1</span>)<span class="sc">/</span>adjustment))</span>
-<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a><span class="do">### In-sample counterfactual and effectiveness adjustment factor, </span></span>
-<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a><span class="do">### adding the counterfactual non-donors (Adjustment == 1) and calculate percentage</span></span>
-<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>donor_est <span class="ot">&lt;-</span> <span class="fu">with</span>(results2, <span class="fu">sum</span>(adjusted_donors, total_donors[adjustment <span class="sc">==</span> <span class="dv">1</span>])<span class="sc">/</span><span class="fu">sum</span>(total_donors)) <span class="sc">*</span> <span class="dv">100</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Show code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="do">### Define counterfactual/effectiveness adjustment (as in Step 3 above)</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>survey_adjust <span class="ot">&lt;-</span> survey <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">adjustment =</span> <span class="fu">case_when</span>(</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Non-GiveWell charities</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    response <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"En almindeligt kendt velgørenhedsorganisation"</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"En klimaorganisation med fradrag (Verdens skove, Naturfonden eller noget tredje). Evt egne investeringer i klimatiltag. "</span>,</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Andre velgørende områder som fx dyrevelfærd, klima, osv."</span>,</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Dansk vegetarisk forening. Mangler en god vegansk og fradrags berettiget organisation. "</span>,</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Oxfam"</span>,<span class="st">"Læger uden grænser "</span>, <span class="st">"PULS projekt ulandshjælp til selvhjælp"</span>, <span class="st">"røde kors"</span>,</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Andre velgørende formål som fx dyrevelfærd, klima, osv."</span>,<span class="st">"Jeg havde brugt færre penge på velgørenhed fordi jeg ikke forstod de etiske perspektiver som GivEffektivt forklarede mig da de medvirkede i Supertanker"</span>,</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Mit hjerte banker for de uskyldige dyr, så de fleste donationer jeg har givet, har været til dyr. Jeg ville elske at mine penge til dyrene kunne blive brugt bedst muligt"</span>) <span class="sc">~</span> <span class="dv">10</span>,</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Counterfactual non-donors</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    response <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Eget forbrug eller opsparing"</span>,</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Fysisk gave"</span>,<span class="st">"Købt et hus ;)"</span>,</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"En eller anden ligegyldig gave"</span>,</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Dd"</span>) <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># GiveWell or similar</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    response <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"En af de organisationer vi pt. anbefaler (uden fradrag): Against Malaria Foundation, New Incentives, Helen Keller International, GiveWell, Malaria Consortium"</span>,</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"GiveWell eller Giving What We Can (uden fradrag)"</span>, <span class="st">"Blandede donationer til Against Malaria Foundation, MSF, kræftens bekæmpelse og lign."</span>,</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Nok Against Malaria Foundation Germany 1 da de er på GiveWell listen og giver skattefradrag, så jeg kan give mere."</span>) <span class="sc">~</span> <span class="fl">1.1</span>))</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="do">### There should be no NAs (all type of responses should be accounted for)</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a><span class="co"># sum(is.na(survey_adjust$adjustment))</span></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a><span class="do">### Calculate total donors and also calculate adjusted number of donors, applying the counterfactual/effectiveness adjustment</span></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>results2 <span class="ot">&lt;-</span> survey_adjust <span class="sc">%&gt;%</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(adjustment) <span class="sc">%&gt;%</span></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total_donors =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">adjusted_donors =</span> (total_donors<span class="sc">*</span>(adjustment<span class="dv">-1</span>)<span class="sc">/</span>adjustment))</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a><span class="do">### In-sample counterfactual and effectiveness adjustment factor, </span></span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a><span class="do">### adding the counterfactual non-donors (Adjustment == 1) and calculate percentage</span></span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>donor_est <span class="ot">&lt;-</span> <span class="fu">with</span>(results2, <span class="fu">sum</span>(adjusted_donors, total_donors[adjustment <span class="sc">==</span> <span class="dv">1</span>])<span class="sc">/</span><span class="fu">sum</span>(total_donors)) <span class="sc">*</span> <span class="dv">100</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>The result is 80.1% which is very close but not identical to the number reported in the current version of the giving multiplier tool because we include newer survey data here.</p>
