@@ -334,9 +334,7 @@ ppsurveykpi <- add_epred_draws(object = mod,
   summarise(total_donated = sum(estimate)) %>%
   # Apply subjective adjustment factors
   mutate(adjusted_total = (total_donated*(as.numeric(adjustment)-1)/as.numeric(adjustment)))
-```
 
-```{r}
 ### Plot posterior in-sample counterfactual and effectiveness adjustment factor
 ppsurveykpi %>%
   group_by(.draw) %>%
