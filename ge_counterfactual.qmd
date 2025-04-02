@@ -34,7 +34,7 @@ The basic strategy is to use post-donation survey responses to the question: *Ho
 
 Next, we assign (subjective!) weights (justified in the Google Sheets link [above](https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193)) to each of these responses that reflect their counterfactual/effectiveness-adjusted value and use those weights to re-calculate the percentage of donated funds that wouldn't have been donated in the absence of Giv Effektivt or would've been donated less effectively. 
 
-Finally, we attempt to mitigate post-donation survey selection bias by re-weighing results to our full donation database sample, using a multilevel model with poststratification (MrP)-based approach. Modelling the data is necessary, since there are demographic combinations in the donation database that we do not observe in the survey sample, hence we need a model to try and predict for those groups.
+Finally, we attempt to mitigate post-donation survey selection bias by re-weighing results to our full donation database sample, using a multilevel regression with poststratification (MrP)-based approach. Modelling the data is necessary, since there are demographic combinations in the donation database that we do not observe in the survey sample, hence we need a model to try and predict for those groups.
  
 The program has 7 main parts:
 
