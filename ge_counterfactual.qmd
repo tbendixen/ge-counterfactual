@@ -1,6 +1,6 @@
 ---
 title: "Giv Effektivt’s counterfactual and effectiveness adjustment factor"
-subtitle: "A method for estimating counterfactual impact using survey data, multilevel modeling and poststratification"
+subtitle: "A method for estimating counterfactual impact in an effective giving organisation using survey data, multilevel modeling and poststratification"
 author: 
   - Theiss Bendixen
   - Giv Effektivt
