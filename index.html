@@ -7,6 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Theiss Bendixen">
+<meta name="author" content="Giv Effektivt">
+<meta name="dcterms.date" content="2025-03-26">
 
 <title>Giv Effektivt’s counterfactual and effectiveness adjustment factor</title>
 <style>
@@ -104,6 +106,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Giv Effektivt’s counterfactual and effectiveness adjustment factor</h1>
+<p class="subtitle lead">A method for estimating counterfactual impact using survey data, multilevel modeling and poststratification</p>
 </div>
 
 
@@ -111,13 +114,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-title-meta">
 
     <div>
-    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-heading">Authors</div>
     <div class="quarto-title-meta-contents">
              <p>Theiss Bendixen </p>
+             <p>Giv Effektivt </p>
           </div>
   </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">March 26, 2025</p>
+    </div>
+  </div>
   
+    <div>
+    <div class="quarto-title-meta-heading">Modified</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date-modified">April 28, 2025</p>
+    </div>
+  </div>
     
   </div>
   
@@ -131,7 +147,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Essentially we ask: <strong>Of our total donations, how big a percentage did we influence, either by encouraging donors to donate or to donate more effectively?</strong></p>
 <p>The basic strategy is to use post-donation survey responses to the question: <em>How would you have spent the donated amount if not on Giv Effektivt?</em> and couple each response to a donation in our donation database based on time stamps.</p>
 <p>Next, we assign (subjective!) weights (justified in the Google Sheets link <a href="https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193">above</a>) to each of these responses that reflect their counterfactual/effectiveness-adjusted value and use those weights to re-calculate the percentage of donated funds that wouldn’t have been donated in the absence of Giv Effektivt or would’ve been donated less effectively.</p>
-<p>Finally, we attempt to mitigate post-donation survey selection bias by re-weighing results to our full donation database sample, using a multilevel regression with poststratification (MrP)-based approach. Modelling the data is necessary, since there are demographic combinations in the donation database that we do not observe in the survey sample, hence we need a model to try and predict for those groups.</p>
+<p>Finally, we attempt to mitigate post-donation survey selection bias by re-weighing results to our full donation database sample, using a multilevel model with poststratification (MrP)-based approach. Modelling the data is necessary, since there are demographic combinations in the donation database that we do not observe in the survey sample, hence we need a model to try and predict for those groups.</p>
 <p>The program has 7 main parts:</p>
 <ol type="1">
 <li><p>First, load packages and data</p></li>
