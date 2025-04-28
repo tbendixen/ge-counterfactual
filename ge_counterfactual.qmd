@@ -1,6 +1,11 @@
 ---
-title: "Giv Effektivt's counterfactual and effectiveness adjustment factor"
-author: Theiss Bendixen
+title: "Giv Effektivt’s counterfactual and effectiveness adjustment factor"
+subtitle: "A method for estimating counterfactual impact using survey data, multilevel modeling and poststratification"
+author: 
+  - Theiss Bendixen
+  - Giv Effektivt
+date: "2025-03-26"
+date-modified: today
 format:
   html:
     code-fold: true
@@ -22,35 +27,35 @@ knitr::opts_chunk$set(
 
 ```
 
-# Introduction 
+# Introduction
+
 This semi-technical write-up aims at computing a combined counterfactual and effectiveness adjustment factor for donations to [Giv Effektivt](https://giveffektivt.dk/).
 
-This factor informs a "counterfactual giving multiplier" estimate for the overall counterfactual impact of Giv Effektivt,
-see more [here](https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193).
+This factor informs a "counterfactual giving multiplier" estimate for the overall counterfactual impact of Giv Effektivt, see more [here](https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193).
 
 Essentially we ask: **Of our total donations, how big a percentage did we influence, either by encouraging donors to donate or to donate more effectively?**
 
 The basic strategy is to use post-donation survey responses to the question: *How would you have spent the donated amount if not on Giv Effektivt?* and couple each response to a donation in our donation database based on time stamps.
 
-Next, we assign (subjective!) weights (justified in the Google Sheets link [above](https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193)) to each of these responses that reflect their counterfactual/effectiveness-adjusted value and use those weights to re-calculate the percentage of donated funds that wouldn't have been donated in the absence of Giv Effektivt or would've been donated less effectively. 
+Next, we assign (subjective!) weights (justified in the Google Sheets link [above](https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193)) to each of these responses that reflect their counterfactual/effectiveness-adjusted value and use those weights to re-calculate the percentage of donated funds that wouldn't have been donated in the absence of Giv Effektivt or would've been donated less effectively.
 
-Finally, we attempt to mitigate post-donation survey selection bias by re-weighing results to our full donation database sample, using a multilevel regression with poststratification (MrP)-based approach. Modelling the data is necessary, since there are demographic combinations in the donation database that we do not observe in the survey sample, hence we need a model to try and predict for those groups.
- 
+Finally, we attempt to mitigate post-donation survey selection bias by re-weighing results to our full donation database sample, using a multilevel model with poststratification (MrP)-based approach. Modelling the data is necessary, since there are demographic combinations in the donation database that we do not observe in the survey sample, hence we need a model to try and predict for those groups.
+
 The program has 7 main parts:
 
-1) First, load packages and data
+1)  First, load packages and data
 
-2) Join survey and donation datasets on time stamps
+2)  Join survey and donation datasets on time stamps
 
-3) Calculate counterfactual and effectiveness adjustment factor in survey sample 
+3)  Calculate counterfactual and effectiveness adjustment factor in survey sample
 
-4) Model and re-weigh results to full donation database sample
+4)  Model and re-weigh results to full donation database sample
 
-5) Model check: For comparison, model data from survey sample similarly to Step 4 but without weights (should roughly match result from Step 3)
+5)  Model check: For comparison, model data from survey sample similarly to Step 4 but without weights (should roughly match result from Step 3)
 
-6) Model check: Plot observed median donations for demographic strata against non-weighted predictions from multilevel model (posterior predictive check)
+6)  Model check: Plot observed median donations for demographic strata against non-weighted predictions from multilevel model (posterior predictive check)
 
-7) Counterfactual and effectiveness adjustment factor based on *number of donors* (to reproduce calculation in giving multiplier document)
+7)  Counterfactual and effectiveness adjustment factor based on *number of donors* (to reproduce calculation in giving multiplier document)
 
 ## Load packages and data
 
@@ -78,9 +83,9 @@ donations <- read.csv("~/Desktop/GE/paste-23e21d9f38b4b0d3.txt") |>
   mutate(donation_timestamp = ymd_hms(created_at, tz = "UTC") + 3600)
 ```
 
-## Join datasets on time stamps 
+## Join datasets on time stamps
 
-The basic approach here is that we try to find matches between survey responders and donations in our donation database within some time range. This time range is fairly arbitrary but a reasonable first pass could be to look for survey responses that happen anywhere from, say, 30 seconds to 900 seconds after a donation. 
+The basic approach here is that we try to find matches between survey responders and donations in our donation database within some time range. This time range is fairly arbitrary but a reasonable first pass could be to look for survey responses that happen anywhere from, say, 30 seconds to 900 seconds after a donation.
 
 ```{r}
 ### Function to find matching surveys for each donation
@@ -140,14 +145,15 @@ final_match <- merged %>%
 
 ```
 
-This time range results in 177 donation matches, where minimum 1 match is found for each survey response. However, some of these survey responses -- `r mult_match` to be precise -- have multiple donation matches. 
+This time range results in 177 donation matches, where minimum 1 match is found for each survey response. However, some of these survey responses -- `r mult_match` to be precise -- have multiple donation matches.
 
 As we proceed, we select only those matches with a single linked donation, leaving us with `r nrow(final_match)` out of `r nrow(survey)` survey responses in total (`r round((nrow(final_match)/nrow(survey))*100, 0)`%).
 
 This captures `r round(sum(final_match$kpi_value)/1000, 0)`k DKK of (prospective) donations, roughly `r round((sum(final_match$kpi_value)/sum(donations$kpi_value))*100, 1)`% of the total donation database.
 
 ## Counterfactual and effectiveness adjustment factor in *survey* sample
-In this step, we assign (subjective!) weights (justified in the same Google Sheets link as [above](https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193)) to each of the survey responses that reflect their combined counterfactual and effectiveness-adjusted value and use those weights to re-calculate the percentage of donated funds that wouldn't have been donated in the absence of Giv Effektivt or would've been donated less effectively. 
+
+In this step, we assign (subjective!) weights (justified in the same Google Sheets link as [above](https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193)) to each of the survey responses that reflect their combined counterfactual and effectiveness-adjusted value and use those weights to re-calculate the percentage of donated funds that wouldn't have been donated in the absence of Giv Effektivt or would've been donated less effectively.
 
 ```{r}
 ######################################################################################
@@ -192,13 +198,14 @@ sample_est <- with(results, sum(adjusted_total, total_donated[adjustment == 1])/
 **We arrive at an estimate of `r round(sample_est,1)`%**. That is, based on the survey data and subjective weights, we estimate that `r round(sample_est,1)`% of the funds we raise and regrant are uniquely attributable to Giv Effektivt. Not too shabby!
 
 ## Counterfactual and effectiveness adjustment factor in *database* sample
+
 The estimate in the previous step assumes that our survey sample is representative of our wider donor base. This is potentially a strong assumption, so we want to try as best as we can to correct for observed discrepancies -- in particular, age and sex which are the available variables -- between our survey sample and our wider donor base. We proceed in the following manner:
 
-1) Fit a model on donated amount predicted by age, sex and survey response in our matched sample
+1)  Fit a model on donated amount predicted by age, sex and survey response in our matched sample
 
-2) Obtain proportions of age and sex in donor database
+2)  Obtain proportions of age and sex in donor database
 
-3) Use donor database proportions to reweigh model predicted donation amounts 
+3)  Use donor database proportions to reweigh model predicted donation amounts
 
 ### Fit a model
 
@@ -316,11 +323,13 @@ db_est <- ppdbkpi %>%
 ```
 
 ### Result
-**The final result is `r round(db_est$y,1)`%** [`r round(db_est$.lower,1)`% ; `r round(db_est$.upper,1)`%], which is similar albeit a little lower than the matched survey sample estimate of `r round(sample_est,1)`%.
+
+**The final result is `r round(db_est$y,1)`%** \[`r round(db_est$.lower,1)`% ; `r round(db_est$.upper,1)`%\], which is similar albeit a little lower than the matched survey sample estimate of `r round(sample_est,1)`%.
 
 The following sections include a few model checks.
 
 ## Model check: Calculate counterfactual and effectiveness adjustment factor in *survey* sample (for comparison)
+
 Here, we check what happens if we ignore the demographic weights to see if our model predictions fit reasonably with our empirical (i.e., not model-based) estimate in the matched survey sample.
 
 ```{r}
@@ -362,10 +371,10 @@ samplemod_est <- ppsurveykpi %>%
 The result is `r round(samplemod_est$y,1)`%. Since we leave out the demographic weights and hence retain the demopgraphic composition of the matched survey sample, this result should line up fairly closely to the sample estimate of `r round(sample_est,1)`% from above, which it does.
 
 ## Model check: Plot observed median donations for demographic strata against non-weighted model predictions
-This model check plots observed (median) donations for demographic strata against non-weighted model predictions. 
 
-The red dots are observed median donations, while the grey points and intervals are predicted median donations.
-The dashed line represents the median donation for each sex.
+This model check plots observed (median) donations for demographic strata against non-weighted model predictions.
+
+The red dots are observed median donations, while the grey points and intervals are predicted median donations. The dashed line represents the median donation for each sex.
 
 How to read this plot? Ideally, the model is able to retrodict fairly accurately the observed donations, although with more shrinkage (and uncertainty) for sparsely populated or unobserved demographic combinations.
 
@@ -445,6 +454,7 @@ Eye-balling results, shrinkage is quite heavy across the board, making demograph
 ## Counterfactual and effectiveness adjustment factor based on number of donors
 
 This final section is a coded up calculation of the counterfactual and effectiveness adjustment factor currently used in the giving multiplier tool ([here](https://docs.google.com/spreadsheets/d/18ibZFOgYWYUIeaLsLnsuCapUMjoh4NeLpLkYGz77x68/edit?gid=670076193#gid=670076193)), which is based on the *number of donors* instead of donation amounts.
+
 ```{r}
 ### Define counterfactual/effectiveness adjustment (as in Step 3 above)
 survey_adjust <- survey %>%
